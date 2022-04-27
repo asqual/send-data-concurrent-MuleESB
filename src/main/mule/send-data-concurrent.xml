@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e4fe3175-ea04-44d2-91af-6844eedef126" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="send-data-concurrentFlow" doc:id="d3f0ad6e-76f1-4a25-bc9b-80b32f7cd17a" >
+		<http:listener doc:name="Listener" doc:id="242c406f-c61e-40a5-999f-d803c88af8ec" config-ref="HTTP_Listener_config" path="senddata"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="ac2949c1-4f06-4112-b346-d231cf05ba31" >
+			<route >
+				<ee:transform doc:name="To CSV" doc:id="0adb83c7-8ca2-4dc6-9d67-5fa1175b6317" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv header = false
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="Write to CSV" doc:id="1fd5a0ff-a8d2-4464-889e-19e21e4098fa" path="C:\Mulesoft\DataUsed\senddata_concurrent.csv" mode="APPEND"/>
+			</route>
+			<route >
+				<ee:transform doc:name="To Json" doc:id="144f6db5-fda3-4699-87ea-6fa4acd577ed" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="Write to Json " doc:id="580df72a-52fa-4039-87c9-4aa9eb74dbd0" path="C:\Mulesoft\DataUsed\senddata_concurrent.json" mode="APPEND"/>
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Logger" doc:id="6b8fcaa1-8c61-45de-994a-233a93c70a42" message="Data sent successfully."/>
+		<ee:transform doc:name="Transform Message" doc:id="38b3cec8-6aea-407c-9662-0867f68c1c8b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Data written successfully!" ,
+	"Code": 200
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
